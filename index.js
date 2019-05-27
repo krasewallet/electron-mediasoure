@@ -5,6 +5,8 @@ const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
   app.quit()
 } else {
+  app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+  
   if (process.env.NODE_ENV !== 'development') {
     global.__static = require('path').join(__dirname, '/static').replace(/\\/g, '\\\\')
   }
