@@ -1,0 +1,16 @@
+{
+  "name": "electron-webpack-babel7",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint --ext .js,.vue -f ./node_modules/eslint-friendly-formatter src",
+    "lint:fix": "eslint --ext .js,.vue -f ./node_modules/eslint-friendly-formatter --fix src"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^3.1.1"
+  }
+}

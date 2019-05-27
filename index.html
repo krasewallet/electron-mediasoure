@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="UTF-8">
+    <title>HTML5视频播放测试</title>
+</head>
+
+<body>
+
+    <video id="mse" muted width="1080" height="720" autoplay></video>
+
+    <script>
+        const mime = 'video/webm; codecs="vp8,vorbis"'
+        const video = document.getElementById('mse')
+        const mediaSource = new MediaSource()
+        let buffer
+        let chunks = []
+        const {spawn} = require('child_process')
+        const ffmpeg = './ffmpeg/ffmpeg.exe'
+        const res = './1.mkv'
+        const proc = spawn(ffmpeg,['-y','-i',res,'-vcodec','libvpx','-g',1,'-threads',4,'-vb','4000k','-acodec','libvorbis','-f','webm','pipe:1'])
+        proc.stdout.on('data', data => {
+          if(buffer.updating || chunks.length> 0){
+            chunks.push(new Uint8Array(data))
+          }
+          else{
+            buffer.appendBuffer(new Uint8Array(data))
+          }
+        })
+        video.src = URL.createObjectURL(mediaSource)
+
+        mediaSource.addEventListener('sourceended', function (e) {
+            console.log('sourceended: ' + mediaSource.readyState);
+        });
+        mediaSource.addEventListener('sourceclose', function (e) {
+            console.log('sourceclose: ' + mediaSource.readyState);
+        });
+        mediaSource.addEventListener('error', function (e) {
+            console.log('error: ' + mediaSource.readyState);
+        });
+        mediaSource.addEventListener('sourceopen', function (e) {
+          video.play();
+          try{
+            if(buffer) {
+              return 
+            }
+            buffer = mediaSource.addSourceBuffer(mime);
+            buffer.mode = 'sequence'
+            buffer.addEventListener('updateend', function (e) {
+                //hack to get safari on mac to start playing, video.currentTime gets stuck on 0
+                // if (mediaSource.duration !== Number.POSITIVE_INFINITY && video.currentTime === 0 &&
+                //     mediaSource.duration > 0) {
+                //     video.currentTime = mediaSource.duration - 1;
+                //     mediaSource.duration = Number.POSITIVE_INFINITY;
+                // }
+                if(!buffer.updating) {
+                  mediaSource.endOfStream()
+                  if(chunks.length> 0) {
+                    buffer.appendBuffer(chunks.shift())
+                  }
+                }
+            });
+            const timer = setInterval(() => {
+              if(chunks.length > 0) {
+                buffer.appendBuffer(chunks.shift())
+                clearInterval(timer)
+              }
+            },200)
+            
+          }
+          catch(e) {
+            console.log(e)
+          }
+        }, false);
+        
+    </script>
+</body>
+
+</html>

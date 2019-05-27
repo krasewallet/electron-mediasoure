@@ -1,0 +1,1 @@
+.\ffmpeg.exe -f dshow -i video="screen-capture-recorder" -pix_fmt yuv420p -vcodec libx264 -crf 18 -preset ultrafast -tune:v zerolatency -f flv -s 800*600 rtmp://127.0.0.1:1935/live/stream
