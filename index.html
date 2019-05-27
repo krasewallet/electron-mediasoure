@@ -48,12 +48,6 @@
             buffer = mediaSource.addSourceBuffer(mime);
             buffer.mode = 'sequence'
             buffer.addEventListener('updateend', function (e) {
-                //hack to get safari on mac to start playing, video.currentTime gets stuck on 0
-                // if (mediaSource.duration !== Number.POSITIVE_INFINITY && video.currentTime === 0 &&
-                //     mediaSource.duration > 0) {
-                //     video.currentTime = mediaSource.duration - 1;
-                //     mediaSource.duration = Number.POSITIVE_INFINITY;
-                // }
                 if(!buffer.updating) {
                   mediaSource.endOfStream()
                   if(chunks.length> 0) {

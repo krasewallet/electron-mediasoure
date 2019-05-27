@@ -1,9 +1,10 @@
 {
-  "name": "electron-webpack-babel7",
+  "name": "electron-mediasource",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node_modules\\electron\\dist\\electron.exe index.js",
     "lint": "eslint --ext .js,.vue -f ./node_modules/eslint-friendly-formatter src",
     "lint:fix": "eslint --ext .js,.vue -f ./node_modules/eslint-friendly-formatter --fix src"
   },
