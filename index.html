@@ -11,62 +11,72 @@
     <video id="mse" width="1080" height="720" controls="controls"></video>
 
     <script>
-        const mime = 'video/webm; codecs="vp8,vorbis"'
-        const video = document.getElementById('mse')
-        const mediaSource = new MediaSource()
-        let buffer
-        let chunks = []
-        const {spawn} = require('child_process')
+      const {spawn} = require('child_process')
+      // const mime = 'video/webm; codecs="vp8,vorbis"'
+      const mime = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"'
+      const video = document.getElementById('mse')
+      const mediaSource = new MediaSource()
+      video.src = URL.createObjectURL(mediaSource)
+
+      let buffer
+      let chunks = []
+      
+      const initBuffer = () => {
         const ffmpeg = './ffmpeg/ffmpeg.exe'
         const res = './1.mkv'
-        const proc = spawn(ffmpeg,['-y','-i',res,'-vcodec','libvpx','-g',1,'-threads',4,'-vb','4000k','-acodec','libvorbis','-f','webm','pipe:1'])
+        // const proc = spawn(ffmpeg,['-y','-i',res,'-vcodec','libvpx','-g',1,'-threads',4,'-vb','4000k','-acodec','libvorbis','-f','webm','pipe:1'])
+        const proc = spawn(ffmpeg,['-y','-i',res,'-c:v','libx264','-c:a','aac','-f','mp4','-movflags','empty_moov+default_base_moof+frag_keyframe','pipe:1'])
         proc.stdout.on('data', data => {
+          console.log(chunks.length)
           if(buffer.updating || chunks.length> 0){
-            chunks.push(new Uint8Array(data))
+            chunks.push(data)
           }
           else{
-            buffer.appendBuffer(new Uint8Array(data))
+            buffer.appendBuffer(data)
           }
-        })
-        video.src = URL.createObjectURL(mediaSource)
+        })         
+      }
 
-        mediaSource.addEventListener('sourceended', function (e) {
-            console.log('sourceended: ' + mediaSource.readyState);
-        });
-        mediaSource.addEventListener('sourceclose', function (e) {
-            console.log('sourceclose: ' + mediaSource.readyState);
-        });
-        mediaSource.addEventListener('error', function (e) {
-            console.log('error: ' + mediaSource.readyState);
-        });
-        mediaSource.addEventListener('sourceopen', function (e) {
-          video.play();
-          try{
-            if(buffer) {
-              return 
+      const updateBuffer = () => {
+        if(chunks.length > 0 && !buffer.updating) {
+          buffer.appendBuffer(chunks.shift())
+        }
+      }
+
+      const onSourceopen = function (e) {
+        mediaSource.removeEventListener('sourceopen',onSourceopen)
+        try{
+          buffer = mediaSource.addSourceBuffer(mime);
+          buffer.mode = 'sequence'
+          buffer.addEventListener('update',function(e) {
+            console.log('update')
+            updateBuffer()
+          })
+          buffer.addEventListener('updateend', function (e) {
+            console.log('updateend')
+            if (!buffer.updating && mediaSource.readyState === 'open') {
+              mediaSource.endOfStream()
             }
-            buffer = mediaSource.addSourceBuffer(mime);
-            buffer.mode = 'sequence'
-            buffer.addEventListener('updateend', function (e) {
-                if(!buffer.updating) {
-                  mediaSource.endOfStream()
-                  if(chunks.length> 0) {
-                    buffer.appendBuffer(chunks.shift())
-                  }
-                }
-            });
-            const timer = setInterval(() => {
-              if(chunks.length > 0) {
-                buffer.appendBuffer(chunks.shift())
-                clearInterval(timer)
-              }
-            },200)
-            
-          }
-          catch(e) {
-            console.log(e)
-          }
-        }, false);
+            updateBuffer()
+            video.play()
+          });
+          initBuffer()
+        }
+        catch(e) {
+          console.log(e)
+        }
+      }
+
+      mediaSource.addEventListener('sourceended', function (e) {
+          console.log('sourceended: ' + mediaSource.readyState);
+      });
+      mediaSource.addEventListener('sourceclose', function (e) {
+          console.log('sourceclose: ' + mediaSource.readyState);
+      });
+      mediaSource.addEventListener('error', function (e) {
+          console.log('error: ' + mediaSource.readyState);
+      });
+      mediaSource.addEventListener('sourceopen',onSourceopen);
         
     </script>
 </body>
